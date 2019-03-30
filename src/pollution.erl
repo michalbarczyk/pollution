@@ -9,42 +9,97 @@
 -module(pollution).
 -author("mb").
 
-%%%-record(coordinates, {latitude, longitude}).
-
 -record(measurement, {type, value, time=calendar:local_time()}).
 
 -record(station, {name, coords, measurements=[]}).
 
 %% API
--export([createMonitor/0, addStation/3, addValue/5, is_coord/2]).
+-export([createMonitor/0, addStation/3, addValue/5, removeValue/4, getOneValue/4, getStationMean/3, getDailyMean/3]).
 
 createMonitor() ->
   #{}.
 
 addStation(Monitor, Name, Coords) ->
-  case maps:is_key(Name, Monitor) or is_coord(Coords, Monitor) of
-    true  -> "ERROR - similar station exists";
+  case maps:is_key(Name, Monitor) or isCoord(Coords, Monitor) of
+    true  -> {error, "similar station exists"};
     _ ->
       Station = #station{name = Name, coords = Coords},
       Monitor#{Station#station.name => Station}
   end.
 
-
-addValue(Monitor, Name, Time, Type, Value) ->
-  Station = maps:get(Name, Monitor),
-  Monitor#{Name := Station#station{measurements = [#measurement{type = Type, value = Value, time = Time}|Station#station.measurements]}};
 addValue(Monitor, {Lat, Lon}, Time, Type, Value) ->
   NameList = [S#station.name || S <- maps:values(Monitor), S#station.coords == {Lat, Lon}],
   case NameList of
-    [] -> "ERROR - no station having this coords";
+    [] -> {error, "no station having this coords"};
     [Name] -> addValue(Monitor, Name, Time, Type, Value)
+  end;
+addValue(Monitor, Name, Time, Type, Value) ->
+  Station = maps:get(Name, Monitor),
+  case isMeasurement(Station#station.measurements, Type, Time) of
+    true -> {error, "already existing measurement having this coords & type & time"};
+    false ->
+      Monitor#{Name := Station#station{measurements = [#measurement{type = Type, value = Value, time = Time}|Station#station.measurements]}}
   end.
 
+removeValue(Monitor, {Lat, Lon}, Time, Type) ->
+  NameList = [S#station.name || S <- maps:values(Monitor), S#station.coords == {Lat, Lon}],
+  case NameList of
+    [] -> {error, "no station having this coords"};
+    [Name] -> removeValue(Monitor, Name, Time, Type)
+  end;
+removeValue(Monitor, Name, Time, Type) ->
+  Station = maps:get(Name, Monitor),
+  Monitor#{Name := Station#station{measurements = lists:delete(getMeasurement(Station#station.measurements, Type, Time), Station#station.measurements)}}.
 
-is_coord({Lat, Lon}, Monitor) ->
+getOneValue(Monitor, {Lat, Lon}, Time, Type) ->
+  NameList = [S#station.name || S <- maps:values(Monitor), S#station.coords == {Lat, Lon}],
+  case NameList of
+    [] -> {error, "no station having this coords"};
+    [Name] -> getOneValue(Monitor, Name, Time, Type)
+  end;
+getOneValue(Monitor, Name, Time, Type) ->
+  Station = maps:get(Name, Monitor),
+  [Value] = [M#measurement.value || M <- Station#station.measurements, M#measurement.time == Time, M#measurement.type == Type],
+  Value.
+
+getStationMean(Monitor, {Lat, Lon}, Type) ->
+  NameList = [S#station.name || S <- maps:values(Monitor), S#station.coords == {Lat, Lon}],
+  case NameList of
+    [] -> {error, "no station having this coords"};
+    [Name] -> getStationMean(Monitor, Name, Type)
+  end;
+getStationMean(Monitor, Name, Type) ->
+  Station = maps:get(Name, Monitor),
+  Values =[M#measurement.value || M <- Station#station.measurements, M#measurement.type == Type],
+  lists:sum(Values) / length(Values).
+
+getDailyMean(Monitor, Date, Type) ->
+  Values = [M#measurement.value || M <- getAllMeasurements(Monitor), M#measurement.type == Type, extractDate(M#measurement.time) == Date],
+  lists:sum(Values) / length(Values).
+
+%%Helper functions
+getMeasurement(Measurements, Type, Time) ->
+  [Meas] = [M || M <- Measurements, M#measurement.type == Type, M#measurement.time == Time],
+  Meas.
+
+isMeasurement(Measurements, Type, Time) ->
+  MeasList = [M || M <- Measurements, M#measurement.type == Type, M#measurement.time == Time],
+  case MeasList of
+    [] -> false;
+    _ -> true
+  end.
+
+isCoord({Lat, Lon}, Monitor) ->
   Stations = [S || S <- maps:values(Monitor), S#station.coords == {Lat, Lon}],
   case Stations of
     [] -> false;
     _  -> true
   end.
+
+getAllMeasurements(Monitor) ->
+  lists:merge([S#station.measurements || S <- maps:values(Monitor)]).
+
+extractDate(Time) ->
+  {Date, {_,_,_}} = Time,
+  Date.
 
