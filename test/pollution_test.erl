@@ -15,6 +15,15 @@ addStation_test() ->
   M = pollution:createMonitor(),
   ?assertEqual(pollution:addStation(M, "D17", {20.0, 50.5}), #{"D17" => {station, "D17", {20.0, 50.5}, []}}).
 
+addValue_test() ->
+  M1 = pollution:createMonitor(),
+  M2 = pollution:addStation(M1, "D17", {20.0, 50.5}),
+  T = #{"D17" =>
+        {station,"D17",
+        {20.0,50.5},
+        [{measurement,"pm25",45,{{2019,4,10},{19, 12, 14}}}]}},
+  ?assertEqual(pollution:addValue(M2, "D17", {{2019,4,10},{19, 12, 14}}, "pm25", 45), T).
+
 getOneValue_test() ->
   M1 = pollution:createMonitor(),
   M2 = pollution:addStation(M1, "D17", {20.0, 50.5}),

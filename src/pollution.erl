@@ -81,6 +81,8 @@ getDailyOverLimit(Monitor, Date, Type, Limit) ->
   StationsOverLimit = [S || S <- maps:values(Monitor), isOverLimit(S, Date, Type, Limit)],
   length(StationsOverLimit).
 
+
+%%Helper functions
 isOverLimit(Station, Date, Type, Norm) ->
   OverLimit = [M || M <- Station#station.measurements,
                         extractDate(M#measurement.time) == Date,
@@ -91,10 +93,6 @@ isOverLimit(Station, Date, Type, Norm) ->
     _  -> true
   end.
 
-
-
-
-%%Helper functions
 getMeasurement(Measurements, Type, Time) ->
   [Meas] = [M || M <- Measurements, M#measurement.type == Type, M#measurement.time == Time],
   Meas.
