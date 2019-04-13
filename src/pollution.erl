@@ -14,7 +14,7 @@
 -record(station, {name, coords, measurements=[]}).
 
 %% API
--export([createMonitor/0, addStation/3, addValue/5, removeValue/4, getOneValue/4, getStationMean/3, getDailyMean/3]).
+-export([createMonitor/0, addStation/3, addValue/5, removeValue/4, getOneValue/4, getStationMean/3, getDailyMean/3, getDailyOverLimit/4]).
 
 createMonitor() ->
   #{}.
@@ -76,6 +76,23 @@ getStationMean(Monitor, Name, Type) ->
 getDailyMean(Monitor, Date, Type) ->
   Values = [M#measurement.value || M <- getAllMeasurements(Monitor), M#measurement.type == Type, extractDate(M#measurement.time) == Date],
   lists:sum(Values) / length(Values).
+
+getDailyOverLimit(Monitor, Date, Type, Limit) ->
+  StationsOverLimit = [S || S <- maps:values(Monitor), isOverLimit(S, Date, Type, Limit)],
+  length(StationsOverLimit).
+
+isOverLimit(Station, Date, Type, Norm) ->
+  OverLimit = [M || M <- Station#station.measurements,
+                        extractDate(M#measurement.time) == Date,
+                        M#measurement.value > Norm,
+                        M#measurement.type == Type],
+  case OverLimit of
+    [] -> false;
+    _  -> true
+  end.
+
+
+
 
 %%Helper functions
 getMeasurement(Measurements, Type, Time) ->
