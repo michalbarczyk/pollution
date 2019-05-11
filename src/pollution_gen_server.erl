@@ -11,7 +11,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, init/1, handle_cast/2, handle_call/3, stop/0, terminate/2]).
+-export([start_link/1, init/1, handle_cast/2, handle_call/3, stop/0, terminate/2]).
 -export([addStation/2, addValue/4, getOneValue/3, debugPrint/0, crash/0]).
 
 
@@ -20,9 +20,8 @@
 %%start() ->
  %% start_link().
 
-start_link() ->
-  M = pollution:createMonitor(),
-  gen_server:start_link({local, ?MODULE}, ?MODULE, M, []).
+start_link(InitialMonitor) ->
+  gen_server:start_link({local, ?MODULE}, ?MODULE, InitialMonitor, []).
 
 
 %% INIT
