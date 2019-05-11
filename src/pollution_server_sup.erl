@@ -8,8 +8,29 @@
 %%%-------------------------------------------------------------------
 -module(pollution_server_sup).
 -author("mb").
+-behaviour(supervisor).
+
 
 %% API
+-export([start/0, start_link/0, init/1]).
+
+start() ->
+  %ets:new(monitorCopy, [set, named_table]),
+  %ets:insert(monitorCopy, {lastState, pollution:createMonitor()}),
+  start_link().
+
+start_link() ->
+  supervisor:start_link({local, pollutionSupervisor}, ?MODULE, []).
+
+init(InitialMonitor) ->
+  {ok,
+    {{one_for_one, 2, 1},
+    [ {pollution_gen_server,
+      {pollution_gen_server, start_link, []},
+      permanent, brutal_kill, worker, [pollution_gen_server]}]
+  }}.
+
+
 
 
 

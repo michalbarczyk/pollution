@@ -11,14 +11,14 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, init/1, handle_cast/2, handle_call/3, stop/0, start/0, terminate/2]).
+-export([start_link/0, init/1, handle_cast/2, handle_call/3, stop/0, terminate/2]).
 -export([addStation/2, addValue/4, getOneValue/3, debugPrint/0, crash/0]).
 
 
 %% START
 
-start() ->
-  start_link().
+%%start() ->
+ %% start_link().
 
 start_link() ->
   M = pollution:createMonitor(),
@@ -29,6 +29,7 @@ start_link() ->
 
 init(InitialMonitor) ->
   {ok, InitialMonitor}.
+
 
 %% STOP & TERMINATE
 
@@ -72,6 +73,7 @@ handle_cast(stop, M) ->
   {stop, normal, M};
 
 handle_cast(crash, M) ->
+  %ets:insert(monitorCopy, {lastState, M}),
   C = 1/0,
   {noreply, M}.
 
