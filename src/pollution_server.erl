@@ -84,7 +84,6 @@ loop(Monitor) ->
       Pid ! {reply, ok}
   end.
 
-
 processResult(Result, Pid, Monitor) ->
   case Result of
     {error, Report} ->
