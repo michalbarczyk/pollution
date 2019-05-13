@@ -21,7 +21,8 @@
  %% start_link().
 
 start_link(InitialMonitor) ->
-  gen_server:start_link({local, ?MODULE}, ?MODULE, InitialMonitor, []).
+  [{lastState, State}] = ets:lookup(monitorKeeper, lastState),
+  gen_server:start_link({local, ?MODULE}, ?MODULE, State, []).
 
 
 %% INIT
@@ -34,7 +35,8 @@ init(InitialMonitor) ->
 
 stop() -> gen_server:cast(?MODULE, stop).
 
-terminate(normal, M) -> io:format("Monitor final content: ~n~w~n", [M]).
+terminate(normal, M) ->
+  io:format("Monitor final content:~n~w", [M]).
 
 
 %% CAST
@@ -72,7 +74,7 @@ handle_cast(stop, M) ->
   {stop, normal, M};
 
 handle_cast(crash, M) ->
-  %ets:insert(monitorCopy, {lastState, M}),
+  ets:insert(monitorKeeper, [{lastState, M}]),
   C = 1/0,
   {noreply, M}.
 
